@@ -5,6 +5,19 @@ import { performOAuthAuthorizationCodeFlow, refreshAccessToken } from './dynatra
 import { globalTokenCache } from './token-cache';
 import { getRandomPort } from './utils';
 import { requestTokenForClientCredentials } from './dynatrace-oauth-client-credentials';
+import { createLogger, LogLevels, LogContexts } from 'bs-logger';
+
+const logger = createLogger({
+  context: { package: 'dynatrace-clients' },
+  targets: 'debug.log%simple',
+});
+
+// FIXME; TEMPORARY
+logger.trace('This is a trace log');
+logger.debug('This is a debug log');
+logger.info('This is an info log');
+logger.warn('This is a warning log');
+logger.error('This is an error log');
 
 /**
  * Create a Dynatrace Http Client (from the http-client SDK) based on the provided authentication credentials
@@ -49,8 +62,12 @@ export const createDtHttpClient = async (
  * Creates an HTTP Client based on environmentUrl and a bearer token, and also sets the user agent
  */
 const createBearerTokenHttpClient = async (environmentUrl: string, bearerToken: string): Promise<HttpClient> => {
+  // FIXME; HACKED TEMPORARILY
+  const environmentLiveUrl = 'https://hgd83841.live.dynatrace.com';
+
   return new PlatformHttpClient({
-    baseUrl: environmentUrl,
+    //baseUrl: environmentUrl,
+    baseUrl: environmentLiveUrl,
     defaultHeaders: {
       'Authorization': `Bearer ${bearerToken}`,
       'User-Agent': getUserAgent(),
@@ -82,7 +99,10 @@ const createOAuthClientCredentialsHttpClient = async (
   );
 
   // Get SSO Base URL
+  // Works only for URLs like https://<env>.apps.dynatrace.com, not https://<env>.live.dynatrace.com
   const ssoBaseURL = await getSSOUrl(environmentUrl);
+
+  logger.debug('ssoBaseURL=' + ssoBaseURL);
 
   // try to request a token, just to verify that everything is set up correctly
   const tokenResponse = await requestTokenForClientCredentials(clientId, clientSecret, ssoBaseURL, scopes);

@@ -4,6 +4,7 @@ export interface DynatraceEnv {
   oauthClientSecret?: string;
   dtPlatformToken?: string;
   dtEnvironment: string;
+  dtLiveEnvironment: string;
   slackConnectionId: string;
   grailBudgetGB: number;
 }
@@ -17,11 +18,16 @@ export function getDynatraceEnv(env: NodeJS.ProcessEnv = process.env): Dynatrace
   const oauthClientSecret = env.OAUTH_CLIENT_SECRET;
   const dtPlatformToken = env.DT_PLATFORM_TOKEN;
   const dtEnvironment = env.DT_ENVIRONMENT;
+  const dtLiveEnvironment = env.DT_LIVE_ENVIRONMENT;
   const slackConnectionId = env.SLACK_CONNECTION_ID || 'fake-slack-connection-id';
   let grailBudgetGB = parseFloat(env.DT_GRAIL_QUERY_BUDGET_GB || '1000'); // Default to 1000 GB
 
   if (!dtEnvironment) {
     throw new Error('Please set DT_ENVIRONMENT environment variable to your Dynatrace Platform Environment');
+  }
+
+  if (!dtLiveEnvironment) {
+    throw new Error('Please set DT_LIVE_ENVIRONMENT environment variable to your Dynatrace Live Environment');
   }
 
   // Allow case where no auth credentials are provided - OAuth auth code flow will be inferred
@@ -45,11 +51,31 @@ export function getDynatraceEnv(env: NodeJS.ProcessEnv = process.env): Dynatrace
     );
   }
 
+  if (!dtLiveEnvironment.startsWith('https://')) {
+    throw new Error(
+      'Please set DT_LIVE_ENVIRONMENT to a valid Dynatrace Environment URL (e.g., https://<environment-id>.live.dynatrace.com)',
+    );
+  }
+
   if (!dtEnvironment.includes('apps.dynatrace.com') && !dtEnvironment.includes('apps.dynatracelabs.com')) {
     throw new Error(
       'Please set DT_ENVIRONMENT to a valid Dynatrace Platform Environment URL (e.g., https://<environment-id>.apps.dynatrace.com)',
     );
   }
 
-  return { oauthClientId, oauthClientSecret, dtPlatformToken, dtEnvironment, slackConnectionId, grailBudgetGB };
+  if (!dtLiveEnvironment.includes('live.dynatrace.com') && !dtLiveEnvironment.includes('live.dynatracelabs.com')) {
+    throw new Error(
+      'Please set DT_LIVE_ENVIRONMENT to a valid Dynatrace Live Environment URL (e.g., https://<environment-id>.live.dynatrace.com)',
+    );
+  }
+
+  return {
+    oauthClientId,
+    oauthClientSecret,
+    dtPlatformToken,
+    dtEnvironment,
+    dtLiveEnvironment,
+    slackConnectionId,
+    grailBudgetGB,
+  };
 }
